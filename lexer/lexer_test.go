@@ -7,7 +7,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"geo/token"
+	"github.com/geovanisouza92/geo/token"
 )
 
 func TestNextToken(t *testing.T) {

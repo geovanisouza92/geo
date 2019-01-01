@@ -4,7 +4,7 @@ import (
 	"io"
 	"text/scanner"
 
-	"geo/token"
+	"github.com/geovanisouza92/geo/token"
 )
 
 type Lexer struct {

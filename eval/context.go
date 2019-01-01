@@ -1,8 +1,8 @@
 package eval
 
 import (
-	"geo/ast"
-	"geo/object"
+	"github.com/geovanisouza92/geo/ast"
+	"github.com/geovanisouza92/geo/object"
 )
 
 type Context struct {

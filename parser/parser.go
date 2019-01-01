@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"geo/ast"
-	"geo/lexer"
-	"geo/token"
+	"github.com/geovanisouza92/geo/ast"
+	"github.com/geovanisouza92/geo/lexer"
+	"github.com/geovanisouza92/geo/token"
 )
 
 const (

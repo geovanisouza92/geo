@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	"geo/eval"
-	"geo/object"
+	"github.com/geovanisouza92/geo/eval"
+	"github.com/geovanisouza92/geo/object"
 )
 
 const Prompt = ">> "

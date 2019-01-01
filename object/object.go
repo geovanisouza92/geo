@@ -6,7 +6,7 @@ import (
 	"hash/fnv"
 	"strings"
 
-	"geo/ast"
+	"github.com/geovanisouza92/geo/ast"
 )
 
 type Object interface {

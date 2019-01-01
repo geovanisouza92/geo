@@ -6,7 +6,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"geo/object"
+	"github.com/geovanisouza92/geo/object"
 )
 
 func TestEval(t *testing.T) {

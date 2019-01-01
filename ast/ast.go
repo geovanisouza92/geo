@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"geo/token"
+	"github.com/geovanisouza92/geo/token"
 )
 
 type Node interface {

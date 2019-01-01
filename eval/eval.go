@@ -3,8 +3,8 @@ package eval
 import (
 	"fmt"
 
-	"geo/ast"
-	"geo/object"
+	"github.com/geovanisouza92/geo/ast"
+	"github.com/geovanisouza92/geo/object"
 )
 
 var (

@@ -3,7 +3,7 @@ package eval
 import (
 	"errors"
 
-	"geo/ast"
+	"github.com/geovanisouza92/geo/ast"
 )
 
 var errNotFound = errors.New("module not found")

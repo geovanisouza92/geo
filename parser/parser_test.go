@@ -1,14 +1,14 @@
 package parser
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"geo/ast"
-	"geo/lexer"
+	"github.com/geovanisouza92/geo/ast"
+	"github.com/geovanisouza92/geo/lexer"
 )
 
 func TestParse(t *testing.T) {

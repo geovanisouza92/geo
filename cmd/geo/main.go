@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	"geo/ast"
-	"geo/eval"
-	"geo/object"
-	"geo/repl"
+	"github.com/geovanisouza92/geo/ast"
+	"github.com/geovanisouza92/geo/eval"
+	"github.com/geovanisouza92/geo/object"
+	"github.com/geovanisouza92/geo/repl"
 )
 
 func main() {

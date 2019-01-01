@@ -3,7 +3,7 @@ package eval
 import (
 	"fmt"
 
-	"geo/object"
+	"github.com/geovanisouza92/geo/object"
 )
 
 var builtins = map[string]*object.Builtin{

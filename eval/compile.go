@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"geo/ast"
-	"geo/lexer"
-	"geo/parser"
+	"github.com/geovanisouza92/geo/ast"
+	"github.com/geovanisouza92/geo/lexer"
+	"github.com/geovanisouza92/geo/parser"
 )
 
 func Compile(input string) (*ast.Module, error) {
