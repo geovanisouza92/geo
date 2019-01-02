@@ -34,17 +34,9 @@ func NewNumber(value float64) *Number {
 	return n
 }
 
-func (n *Number) Type() ObjectType {
-	return TypeNumber
-}
-
-func (n *Number) String() string {
-	return fmt.Sprintf("%v", n.Value)
-}
-
-func (n *Number) HashKey() HashKey {
-	return n.hashKey
-}
+func (n *Number) Type() ObjectType { return TypeNumber }
+func (n *Number) String() string   { return fmt.Sprintf("%v", n.Value) }
+func (n *Number) HashKey() HashKey { return n.hashKey }
 
 type Bool struct {
 	Value   bool
@@ -61,17 +53,9 @@ func NewBool(value bool) *Bool {
 	return b
 }
 
-func (b *Bool) Type() ObjectType {
-	return TypeBool
-}
-
-func (b *Bool) String() string {
-	return fmt.Sprintf("%t", b.Value)
-}
-
-func (b *Bool) HashKey() HashKey {
-	return b.hashKey
-}
+func (b *Bool) Type() ObjectType { return TypeBool }
+func (b *Bool) String() string   { return fmt.Sprintf("%t", b.Value) }
+func (b *Bool) HashKey() HashKey { return b.hashKey }
 
 type String struct {
 	Value   string
@@ -86,25 +70,15 @@ func NewString(value string) *String {
 	return s
 }
 
-func (s *String) Type() ObjectType {
-	return TypeString
-}
-
-func (s *String) String() string {
-	return s.Value
-}
-
-func (s *String) HashKey() HashKey {
-	return s.hashKey
-}
+func (s *String) Type() ObjectType { return TypeString }
+func (s *String) String() string   { return s.Value }
+func (s *String) HashKey() HashKey { return s.hashKey }
 
 type Array struct {
 	Elements []Object
 }
 
-func (a *Array) Type() ObjectType {
-	return TypeArray
-}
+func (a *Array) Type() ObjectType { return TypeArray }
 
 func (a *Array) String() string {
 	var b bytes.Buffer
@@ -130,9 +104,7 @@ type Hash struct {
 	Pairs map[HashKey]HashPair
 }
 
-func (h *Hash) Type() ObjectType {
-	return TypeHash
-}
+func (h *Hash) Type() ObjectType { return TypeHash }
 
 func (h *Hash) String() string {
 	var b bytes.Buffer
@@ -152,37 +124,22 @@ func (h *Hash) String() string {
 type Null struct {
 }
 
-func (n *Null) Type() ObjectType {
-	return TypeNull
-}
-
-func (n *Null) String() string {
-	return "null"
-}
+func (n *Null) Type() ObjectType { return TypeNull }
+func (n *Null) String() string   { return "null" }
 
 type Return struct {
 	Value Object
 }
 
-func (r *Return) Type() ObjectType {
-	return TypeReturn
-}
-
-func (r *Return) String() string {
-	return r.Value.String()
-}
+func (r *Return) Type() ObjectType { return TypeReturn }
+func (r *Return) String() string   { return r.Value.String() }
 
 type Error struct {
 	Message error
 }
 
-func (e *Error) Type() ObjectType {
-	return TypeError
-}
-
-func (e *Error) String() string {
-	return e.Message.Error()
-}
+func (e *Error) Type() ObjectType { return TypeError }
+func (e *Error) String() string   { return e.Message.Error() }
 
 type Scope struct {
 	internal map[string]Object
@@ -222,9 +179,7 @@ type Fn struct {
 	Scope  *Scope // TODO: Should this be moved for each block?
 }
 
-func (f *Fn) Type() ObjectType {
-	return TypeFn
-}
+func (f *Fn) Type() ObjectType { return TypeFn }
 
 func (f *Fn) String() string {
 	var b bytes.Buffer
@@ -243,19 +198,14 @@ func (f *Fn) String() string {
 	return b.String()
 }
 
-type BuiltinFunction func(...Object) Object
+type BuiltinImpl func(...Object) Object
 
 type Builtin struct {
 	// NOTE: Maybe declare other fields, like Doc
 	Name   string
 	Params []ObjectType
-	Fn     BuiltinFunction
+	Impl   BuiltinImpl
 }
 
-func (r *Builtin) Type() ObjectType {
-	return TypeBuiltin
-}
-
-func (r *Builtin) String() string {
-	return "builtin function"
-}
+func (r *Builtin) Type() ObjectType { return TypeBuiltin }
+func (r *Builtin) String() string   { return "builtin function" }

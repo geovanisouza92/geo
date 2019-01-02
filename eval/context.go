@@ -15,7 +15,7 @@ func NewContext(scope *object.Scope) *Context {
 	c := &Context{registry: newModuleRegistry(), scope: scope}
 	c.builtins = builtins
 	c.builtins["import"] = &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
+		Impl: func(args ...object.Object) object.Object {
 			// TODO
 
 			return nil

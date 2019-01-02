@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"github.com/geovanisouza92/geo/object"
 )
 
 func TestEval(t *testing.T) {
-	Convey("numbers", t, func() {
-		tests := []struct {
+	t.Run("numbers", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   float64
 		}{
@@ -25,13 +23,14 @@ func TestEval(t *testing.T) {
 			{"-12.1", -12.1},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
-			testNumber(actual, expected.val)
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
+			testNumber(t, actual, tc.val)
 		}
 	})
-	Convey("bool", t, func() {
-		tests := []struct {
+
+	t.Run("bool", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   bool
 		}{
@@ -56,13 +55,14 @@ func TestEval(t *testing.T) {
 			{"(1 > 2) == false", true},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
-			testBool(actual, expected.val)
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
+			testBool(t, actual, tc.val)
 		}
 	})
-	Convey("string", t, func() {
-		tests := []struct {
+
+	t.Run("string", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   string
 		}{
@@ -72,22 +72,28 @@ func TestEval(t *testing.T) {
 			{`"foo" + "bar"`, "foobar"},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
-			testString(actual, expected.val)
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
+			testString(t, actual, tc.val)
 		}
 	})
-	Convey("array", t, func() {
+
+	t.Run("array", func(t *testing.T) {
 		input := "[1, 2 * 2, 3 + 3]"
-		actual := testEval(input)
+		actual := testEval(t, input)
 		ary, ok := actual.(*object.Array)
-		So(ok, ShouldBeTrue)
-		So(len(ary.Elements), ShouldEqual, 3)
-		testNumber(ary.Elements[0], 1)
-		testNumber(ary.Elements[1], 4)
-		testNumber(ary.Elements[2], 6)
+		if !ok {
+			t.Errorf("value should be *object.Array; got %T", actual)
+		}
+		if len(ary.Elements) != 3 {
+			t.Errorf("array should have 3 elements; got %d", len(ary.Elements))
+		}
+		testNumber(t, ary.Elements[0], 1)
+		testNumber(t, ary.Elements[1], 4)
+		testNumber(t, ary.Elements[2], 6)
 	})
-	Convey("hash", t, func() {
+
+	t.Run("hash", func(t *testing.T) {
 		input := `let two = "two";
 				{
 					"one": 10 - 9,
@@ -107,21 +113,28 @@ func TestEval(t *testing.T) {
 			(False.HashKey()):                     6,
 		}
 
-		actual := testEval(input)
-		res, ok := actual.(*object.Hash)
-		So(ok, ShouldBeTrue)
-		So(len(res.Pairs), ShouldEqual, len(expected))
+		actual := testEval(t, input)
+		hash, ok := actual.(*object.Hash)
+		if !ok {
+			t.Errorf("value should be *object.Hash; got %T", actual)
+		}
+		if len(hash.Pairs) != len(expected) {
+			t.Errorf("hash should have %d pairs; got %d", len(expected), len(hash.Pairs))
+		}
 
 		for k, v := range expected {
-			Convey(fmt.Sprintf("testing %v", v), func() {
-				pair, ok := res.Pairs[k]
-				So(ok, ShouldBeTrue)
-				testNumber(pair.Value, v)
+			t.Run(fmt.Sprintf("testing %v", v), func(t *testing.T) {
+				pair, ok := hash.Pairs[k]
+				if !ok {
+					t.Errorf("hash value for key %q should exist", k)
+				}
+				testNumber(t, pair.Value, v)
 			})
 		}
 	})
-	Convey("index expressions", t, func() {
-		tests := []struct {
+
+	t.Run("index expressions", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   interface{}
 		}{
@@ -144,22 +157,23 @@ func TestEval(t *testing.T) {
 			{`{false: 5}[false]`, 5},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
-			switch val := expected.val.(type) {
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
+			switch val := tc.val.(type) {
 			case int:
-				testNumber(actual, float64(val))
+				testNumber(t, actual, float64(val))
 			case float64:
-				testNumber(actual, val)
+				testNumber(t, actual, val)
 			case string:
-				testString(actual, val)
+				testString(t, actual, val)
 			default:
-				testNull(actual)
+				testNull(t, actual)
 			}
 		}
 	})
-	Convey("prefix expressions", t, func() {
-		tests := []struct {
+
+	t.Run("prefix expressions", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   bool
 		}{
@@ -177,15 +191,16 @@ func TestEval(t *testing.T) {
 			{`!{"foo": "bar"}`, false},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				actual := testEval(expected.input)
-				testBool(actual, expected.val)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				actual := testEval(t, tc.input)
+				testBool(t, actual, tc.val)
 			})
 		}
 	})
-	Convey("infix expressions", t, func() {
-		tests := []struct {
+
+	t.Run("infix expressions", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   float64
 		}{
@@ -206,13 +221,14 @@ func TestEval(t *testing.T) {
 			{"(5 + 10 * 2 + 15 / 3) * 2 + -10", 50},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
-			testNumber(actual, expected.val)
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
+			testNumber(t, actual, tc.val)
 		}
 	})
-	Convey("if expressions", t, func() {
-		tests := []struct {
+
+	t.Run("if expressions", func(t *testing.T) {
+		tt := []struct {
 			input  string
 			output interface{}
 		}{
@@ -225,20 +241,21 @@ func TestEval(t *testing.T) {
 			{"if (1 < 2) { 10 } else { 20 }", 10},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
-			switch val := expected.output.(type) {
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
+			switch val := tc.output.(type) {
 			case int:
-				testNumber(actual, float64(val))
+				testNumber(t, actual, float64(val))
 			case float64:
-				testNumber(actual, val)
+				testNumber(t, actual, val)
 			default:
-				testNull(actual)
+				testNull(t, actual)
 			}
 		}
 	})
-	Convey("return expressions", t, func() {
-		tests := []struct {
+
+	t.Run("return expressions", func(t *testing.T) {
+		tt := []struct {
 			input  string
 			output float64
 		}{
@@ -259,13 +276,14 @@ func TestEval(t *testing.T) {
 			},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
-			testNumber(actual, expected.output)
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
+			testNumber(t, actual, tc.output)
 		}
 	})
-	Convey("error handling", t, func() {
-		tests := []struct {
+
+	t.Run("error handling", func(t *testing.T) {
+		tt := []struct {
 			input   string
 			message string
 		}{
@@ -318,17 +336,22 @@ func TestEval(t *testing.T) {
 			},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				actual := testEval(expected.input)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				actual := testEval(t, tc.input)
 				err, ok := actual.(*object.Error)
-				So(ok, ShouldBeTrue)
-				So(err.Message.Error(), ShouldEqual, expected.message)
+				if !ok {
+					t.Errorf("value should be *object.Error; got %T", actual)
+				}
+				if err.Message.Error() != tc.message {
+					t.Errorf("error message should be %q; got %q", tc.message, err.Message.Error())
+				}
 			})
 		}
 	})
-	Convey("let statements", t, func() {
-		tests := []struct {
+
+	t.Run("let statements", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   float64
 		}{
@@ -338,24 +361,34 @@ func TestEval(t *testing.T) {
 			{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
-			testNumber(actual, expected.val)
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
+			testNumber(t, actual, tc.val)
 		}
 	})
-	Convey("functions", t, func() {
+
+	t.Run("functions", func(t *testing.T) {
 		input := "fn(x) { x + 2; };"
 		expectedBody := "(x + 2)"
 
-		actual := testEval(input)
+		actual := testEval(t, input)
 		fn, ok := actual.(*object.Fn)
-		So(ok, ShouldBeTrue)
-		So(len(fn.Params), ShouldEqual, 1)
-		So(fn.Params[0].String(), ShouldEqual, "x")
-		So(fn.Body.String(), ShouldEqual, expectedBody)
+		if !ok {
+			t.Errorf("value should be *object.Fn; got %T", actual)
+		}
+		if len(fn.Params) != 1 {
+			t.Errorf("function should have one parameter; got %d", len(fn.Params))
+		}
+		if fn.Params[0].String() != "x" {
+			t.Errorf(`function's first parameter name should be "x"; got %q`, fn.Params[0].String())
+		}
+		if fn.Body.String() != expectedBody {
+			t.Errorf("function body should be %q; got %q", expectedBody, fn.Body.String())
+		}
 	})
-	Convey("function applications", t, func() {
-		tests := []struct {
+
+	t.Run("function applications", func(t *testing.T) {
+		tt := []struct {
 			input string
 			value float64
 		}{
@@ -370,14 +403,15 @@ func TestEval(t *testing.T) {
 			{"fn(x, y) { x + y; }(2, 3, 5)", 5},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				actual := testEval(expected.input)
-				testNumber(actual, expected.value)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				actual := testEval(t, tc.input)
+				testNumber(t, actual, tc.value)
 			})
 		}
 	})
-	Convey("closures", t, func() {
+
+	t.Run("closures", func(t *testing.T) {
 		input := `
 		let newAdder = fn(x) {
 			fn(y) { x + y };
@@ -386,63 +420,73 @@ func TestEval(t *testing.T) {
 		let addTwo = newAdder(2);
 		addTwo(2);`
 
-		actual := testEval(input)
-		testNumber(actual, 4)
+		actual := testEval(t, input)
+		testNumber(t, actual, 4)
 	})
-	Convey("builtin functions", t, func() {
-		tests := []struct {
+
+	t.Run("builtin functions", func(t *testing.T) {
+		tt := []struct {
 			input string
 			value interface{}
 		}{
 			{`len("")`, 0},
 			{`len("four")`, 4},
 			{`len("hello world")`, 11},
-			{`len(1)`, "argument to `len` must be (string, array), got number"},
+			{`len(1)`, "argument to `len` must be (TypeString, TypeArray), got TypeNumber"},
 			// {`len("one", "two")`, "wrong number of arguments. got=2, want=1"},
 			{`len([1, 2, 3])`, 3},
 			{`len([])`, 0},
 			{`puts!("hello", "world!")`, nil},
 			{`head([1, 2, 3])`, 1},
 			{`head([])`, nil},
-			{`head(1)`, "argument to `head` must be (array), got number"},
+			{`head(1)`, "argument to `head` must be (TypeArray), got TypeNumber"},
 			{`last([1, 2, 3])`, 3},
 			{`last([])`, nil},
-			{`last(1)`, "argument to `last` must be (array), got number"},
+			{`last(1)`, "argument to `last` must be (TypeArray), got TypeNumber"},
 			{`tail([1, 2, 3])`, []int{2, 3}},
 			{`tail([])`, nil},
 			{`push([], 1)`, []int{1}},
-			{`push(1, 1)`, "argument to `push` must be (array), got number"},
+			{`push(1, 1)`, "argument to `push` must be (TypeArray), got TypeNumber"},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
 
-				actual := testEval(expected.input)
+				actual := testEval(t, tc.input)
 
-				switch val := expected.value.(type) {
+				switch val := tc.value.(type) {
 				case int:
-					testNumber(actual, float64(val))
+					testNumber(t, actual, float64(val))
 				case []int:
 					ary, ok := actual.(*object.Array)
-					So(ok, ShouldBeTrue)
-					So(len(ary.Elements), ShouldEqual, len(val))
+					if !ok {
+						t.Errorf("value should be *object.Array; got %T", actual)
+					}
+					if len(ary.Elements) != len(val) {
+						t.Errorf("array should have %d elements; got %d", len(val), len(ary.Elements))
+					}
 					for i, it := range val {
-						Convey(fmt.Sprintf("checking for value: %v", it), func() {
-							testNumber(ary.Elements[i], float64(it))
+						t.Run(fmt.Sprintf("checking for value: %v", it), func(t *testing.T) {
+							testNumber(t, ary.Elements[i], float64(it))
 						})
 					}
 				case float64:
-					testNumber(actual, val)
+					testNumber(t, actual, val)
 				case string:
 					err, ok := actual.(*object.Error)
-					So(ok, ShouldBeTrue)
-					So(err.Message.Error(), ShouldEqual, val)
+					if !ok {
+						t.Errorf("value should be *object.Error; got %T", actual)
+					}
+					if err.Message.Error() != val {
+						t.Errorf("error message should be %q; got %q", val, err.Message.Error())
+					}
 				}
 			})
 		}
 	})
-	Convey("map+reduce", t, func() {
-		tests := []struct {
+
+	t.Run("map+reduce", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   interface{}
 		}{
@@ -482,37 +526,43 @@ func TestEval(t *testing.T) {
 		`, 15},
 		}
 
-		for _, expected := range tests {
-			actual := testEval(expected.input)
+		for _, tc := range tt {
+			actual := testEval(t, tc.input)
 
-			switch val := expected.val.(type) {
+			switch val := tc.val.(type) {
 			case []float64:
 				ary, ok := actual.(*object.Array)
-				So(ok, ShouldBeTrue)
-				So(len(ary.Elements), ShouldEqual, len(val))
+				if !ok {
+					t.Errorf("value should be *object.Array; got %T", actual)
+				}
+				if len(ary.Elements) != len(val) {
+					t.Errorf("array should have %d elements; got %d", len(val), len(ary.Elements))
+				}
 				for i, it := range val {
-					Convey(fmt.Sprintf("checking for value: %v", it), func() {
-						testNumber(ary.Elements[i], float64(it))
+					t.Run(fmt.Sprintf("checking for value: %v", it), func(t *testing.T) {
+						testNumber(t, ary.Elements[i], float64(it))
 					})
 				}
 			case int:
-				testNumber(actual, float64(val))
+				testNumber(t, actual, float64(val))
 			}
 		}
 	})
-	Convey("block scopes", t, func() {
+
+	t.Run("block scopes", func(t *testing.T) {
 		input := `
-let x = 5;
-if (true) {
-	let x = 6;
-};
-return x;
-`
-		actual := testEval(input)
-		testNumber(actual, 5)
+			let x = 5;
+			if (true) {
+				let x = 6;
+			};
+			return x;
+		`
+		actual := testEval(t, input)
+		testNumber(t, actual, 5)
 	})
-	Convey("pipes", t, func() {
-		tests := []struct {
+
+	t.Run("pipes", func(t *testing.T) {
+		tt := []struct {
 			input string
 			val   float64
 		}{
@@ -520,44 +570,59 @@ return x;
 			{"[2, 3] | head | fn(x, y){ x * y } | fn(y, f) { f(y) }(5)", 10},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				actual := testEval(expected.input)
-				testNumber(actual, expected.val)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				actual := testEval(t, tc.input)
+				testNumber(t, actual, tc.val)
 			})
 		}
 	})
 }
 
-func testEval(input string) object.Object {
+func testEval(t *testing.T, input string) object.Object {
 	s, err := Compile(input)
-	So(err, ShouldBeNil)
+	if err != nil {
+		t.Errorf("compilation should succeed; got err %v", err)
+	}
 	c := NewContext(object.NewRootScope())
 	return c.Eval(s)
 }
 
-func testNumber(obj object.Object, val float64) {
+func testNumber(t *testing.T, obj object.Object, val float64) {
 	num, ok := obj.(*object.Number)
 	if !ok {
 		err := obj.(*object.Error)
-		So(err.Message, ShouldEqual, "")
+		if err.Message.Error() != "" {
+			t.Errorf("number should be valid; got err %v", err.Message)
+		}
 	}
-	So(ok, ShouldBeTrue)
-	So(num.Value, ShouldEqual, val)
+	if num.Value != val {
+		t.Errorf("number value should be %v; got %v", val, num.Value)
+	}
 }
 
-func testBool(obj object.Object, val bool) {
+func testBool(t *testing.T, obj object.Object, val bool) {
 	b, ok := obj.(*object.Bool)
-	So(ok, ShouldBeTrue)
-	So(b.Value, ShouldEqual, val)
+	if !ok {
+		t.Errorf("object should be *object.Bool; got %T", obj)
+	}
+	if b.Value != val {
+		t.Errorf("boolean value should be %v; got %v", val, b.Value)
+	}
 }
 
-func testString(obj object.Object, val string) {
+func testString(t *testing.T, obj object.Object, val string) {
 	str, ok := obj.(*object.String)
-	So(ok, ShouldBeTrue)
-	So(str.Value, ShouldEqual, val)
+	if !ok {
+		t.Errorf("object should be *object.String; got %T", obj)
+	}
+	if str.Value != val {
+		t.Errorf("string value should be %q; got %q", val, str.Value)
+	}
 }
 
-func testNull(obj object.Object) {
-	So(obj, ShouldEqual, Null)
+func testNull(t *testing.T, obj object.Object) {
+	if obj != Null {
+		t.Errorf("object should be 'null'; got %v", obj)
+	}
 }

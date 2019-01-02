@@ -193,11 +193,11 @@ func (c *Context) applyFn(fn object.Object, args ...object.Object) object.Object
 
 		for i, a := range fn.Params {
 			if a&args[i].Type() == 0 {
-				return newError("argument to `%s` must be (%s), got %s", fn.Name, object.ObjectTypesToString(a), object.ObjectTypeToString(args[i].Type()))
+				return newError("argument to `%s` must be (%s), got %s", fn.Name, object.ObjectTypesToString(a), args[i].Type().String())
 			}
 		}
 
-		return fn.Fn(args...)
+		return fn.Impl(args...)
 
 	default:
 		return newError("not a function: %s", fn.Type())

@@ -2,110 +2,125 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/geovanisouza92/geo/ast"
 	"github.com/geovanisouza92/geo/lexer"
 )
 
 func TestParse(t *testing.T) {
-	Convey("Parse module", t, func() {
-		input := `
-		let x = 5;
-		let y = true;
-		let foobar = y;
-		`
+	input := `
+let x = 5;
+let y = true;
+let foobar = y;
+`
 
-		m := testEval(input, 3)
+	m := assertEval(t, input, 3)
 
-		tests := []struct {
-			id  string
-			val interface{}
-		}{
-			{"x", 5},
-			{"y", true},
-			{"foobar", "y"},
-		}
+	tt := []struct {
+		id  string
+		val interface{}
+	}{
+		{"x", 5},
+		{"y", true},
+		{"foobar", "y"},
+	}
 
-		for i, expected := range tests {
-			Convey(fmt.Sprintf("test let statement #%d", i), func() {
-				testLetStatement(t, m.Statements[i], expected.id, expected.val)
-			})
-		}
-	})
+	for i, tc := range tt {
+		t.Run("test let statement #"+strconv.Itoa(i), func(t *testing.T) {
+			testLetStatement(t, m.Statements[i], tc.id, tc.val)
+		})
+	}
 }
 
 func TestReturn(t *testing.T) {
-	Convey("Return statement", t, func() {
-		tests := []struct {
-			input string
-			val   interface{}
-		}{
-			{"return 5;", 5},
-			{"return 10;", 10},
-			{"return 993322;", 993322},
-		}
+	tt := []struct {
+		input string
+		val   interface{}
+	}{
+		{"return 5;", 5},
+		{"return 10;", 10},
+		{"return 993322;", 993322},
+	}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				m := testEval(expected.input, 1)
+	for _, tc := range tt {
+		t.Run(tc.input, func(t *testing.T) {
+			m := assertEval(t, tc.input, 1)
 
-				ret, ok := m.Statements[0].(*ast.ReturnStatement)
-				So(ok, ShouldBeTrue)
-				So(ret.TokenLiteral(), ShouldEqual, "return")
-				testLiteral(t, ret.Value, expected.val)
-			})
-		}
-	})
+			ret, ok := m.Statements[0].(*ast.ReturnStatement)
+			if !ok {
+				t.Errorf("statement should be *ast.ReturnStatement; got %T", ret)
+			}
+			if ret.TokenLiteral() != "return" {
+				t.Errorf(`return literal should be "return"; got %q`, ret.TokenLiteral())
+			}
+			testLiteral(t, ret.Value, tc.val)
+		})
+	}
 }
 
 func TestExpressions(t *testing.T) {
-	Convey("Id literal", t, func() {
+	t.Run("Id literal", func(t *testing.T) {
 		input := `foobar;`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 
 		testLiteral(t, exp.Expression, "foobar")
 	})
-	Convey("Num literal", t, func() {
+
+	t.Run("Num literal", func(t *testing.T) {
 		input := `5;`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 
 		testLiteral(t, exp.Expression, 5)
 	})
-	Convey("String literal", t, func() {
+
+	t.Run("String literal", func(t *testing.T) {
 		input := `"Hello world";`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 
-		testStringLiteral(exp.Expression, "Hello world")
+		testStringLiteral(t, exp.Expression, "Hello world")
 	})
-	Convey("Array literal", t, func() {
+
+	t.Run("Array literal", func(t *testing.T) {
 		input := `[1, 2 * 2, 3 + 3];`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 		ary, ok := exp.Expression.(*ast.Array)
-		So(ok, ShouldBeTrue)
-		So(len(ary.Elements), ShouldEqual, 3)
+		if !ok {
+			t.Errorf("expression should be *ast.Array; got %T", m.Statements[0])
+		}
+		if len(ary.Elements) != 3 {
+			t.Errorf("array should have 3 elements; got %d", len(ary.Elements))
+		}
 
-		testNumberLiteral(ary.Elements[0], 1)
+		testNumberLiteral(t, ary.Elements[0], 1)
 		testInfixExpression(t, ary.Elements[1], 2, "*", 2)
 		testInfixExpression(t, ary.Elements[2], 3, "+", 3)
 	})
-	Convey("Hash literal", t, func() {
-		tests := []struct {
+
+	t.Run("Hash literal", func(t *testing.T) {
+		tt := []struct {
 			input  string
 			length int
 			val    interface{}
@@ -113,57 +128,62 @@ func TestExpressions(t *testing.T) {
 			{"{};", 0, map[string]float64{}},
 			{`{"one": 1, "two": 2, "three": 3};`, 3, map[string]float64{"one": 1, "two": 2, "three": 3}},
 			{`{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`, 3, map[string]func(ast.Expression){
-				"one": func(e ast.Expression) {
-					testInfixExpression(t, e, 0, "+", 1)
-				},
-				"two": func(e ast.Expression) {
-					testInfixExpression(t, e, 10, "-", 8)
-				},
-				"three": func(e ast.Expression) {
-					testInfixExpression(t, e, 15, "/", 5)
-				},
+				"one":   func(e ast.Expression) { testInfixExpression(t, e, 0, "+", 1) },
+				"two":   func(e ast.Expression) { testInfixExpression(t, e, 10, "-", 8) },
+				"three": func(e ast.Expression) { testInfixExpression(t, e, 15, "/", 5) },
 			}},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				m := testEval(expected.input, 1)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				m := assertEval(t, tc.input, 1)
 
 				exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-				So(ok, ShouldBeTrue)
+				if !ok {
+					t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+				}
 				hash, ok := exp.Expression.(*ast.Hash)
-				So(ok, ShouldBeTrue)
-				So(len(hash.Pairs), ShouldEqual, expected.length)
+				if !ok {
+					t.Errorf("expression should be *ast.Hash; got %T", exp.Expression)
+				}
+				if len(hash.Pairs) != tc.length {
+					t.Errorf("hash should have %d pairs; got %d", tc.length, len(hash.Pairs))
+				}
 
-				switch val := expected.val.(type) {
+				switch val := tc.val.(type) {
 				case map[string]float64:
 
 					i := 1
 					for k, v := range hash.Pairs {
-						Convey(fmt.Sprintf("testing %d", i), func() {
+						t.Run(fmt.Sprintf("testing %d", i), func(t *testing.T) {
 							key, ok := k.(*ast.String)
-							So(ok, ShouldBeTrue)
-							testNumberLiteral(v, val[key.Value])
+							if !ok {
+								t.Errorf("key should be *ast.String; got %T", k)
+							}
+							testNumberLiteral(t, v, val[key.Value])
 						})
-						i += 1
+						i++
 					}
 				case map[string]func(ast.Expression):
 
 					i := 1
 					for k, v := range hash.Pairs {
-						Convey(fmt.Sprintf("testing %d", i), func() {
+						t.Run(fmt.Sprintf("testing %d", i), func(t *testing.T) {
 							key, ok := k.(*ast.String)
-							So(ok, ShouldBeTrue)
+							if !ok {
+								t.Errorf("key should be *ast.String; got %T", k)
+							}
 							val[key.Value](v)
 						})
-						i += 1
+						i++
 					}
 				}
 			})
 		}
 	})
-	Convey("Prefix expressions", t, func() {
-		tests := []struct {
+
+	t.Run("Prefix expressions", func(t *testing.T) {
+		tt := []struct {
 			input string
 			op    string
 			val   interface{}
@@ -174,22 +194,29 @@ func TestExpressions(t *testing.T) {
 			{"!false;", "!", false},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				m := testEval(expected.input, 1)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				m := assertEval(t, tc.input, 1)
 
 				exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-				So(ok, ShouldBeTrue)
+				if !ok {
+					t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+				}
 
 				prefix, ok := exp.Expression.(*ast.PrefixExpression)
-				So(ok, ShouldBeTrue)
-				So(prefix.Op, ShouldEqual, expected.op)
-				testLiteral(t, prefix.Right, expected.val)
+				if !ok {
+					t.Errorf("prefix expression should be *ast.PrefixExpression; got %T", exp.Expression)
+				}
+				if prefix.Op != tc.op {
+					t.Errorf("prefix expression should have operator %q; got %q", tc.op, prefix.Op)
+				}
+				testLiteral(t, prefix.Right, tc.val)
 			})
 		}
 	})
-	Convey("Infix expressions", t, func() {
-		tests := []struct {
+
+	t.Run("Infix expressions", func(t *testing.T) {
+		tt := []struct {
 			input string
 			left  interface{}
 			op    string
@@ -213,47 +240,65 @@ func TestExpressions(t *testing.T) {
 			{"false == false", false, "==", false},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				m := testEval(expected.input, 1)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				m := assertEval(t, tc.input, 1)
 
 				exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-				So(ok, ShouldBeTrue)
+				if !ok {
+					t.Errorf("expression should be *ast.ExpressionStatement; got %T", m.Statements[0])
+				}
 
-				testInfixExpression(t, exp.Expression, expected.left, expected.op, expected.right)
+				testInfixExpression(t, exp.Expression, tc.left, tc.op, tc.right)
 			})
 		}
 	})
-	Convey("Index expression", t, func() {
+
+	t.Run("Index expression", func(t *testing.T) {
 		input := `myArray[1 + 1];`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 		idx, ok := exp.Expression.(*ast.Index)
+		if !ok {
+			t.Errorf("index expression should be *ast.Index; got %T", exp.Expression)
+		}
 
-		testIdLiteral(idx.Left, "myArray")
+		testIdLiteral(t, idx.Left, "myArray")
 		testInfixExpression(t, idx.Index, 1, "+", 1)
 	})
-	Convey("Function expressions", t, func() {
+
+	t.Run("Function expressions", func(t *testing.T) {
 		input := `fn(x, y) { x + y; }`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 
 		fn, ok := exp.Expression.(*ast.Fn)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("expression should be *ast.Fn; got %T", exp.Expression)
+		}
 		testLiteral(t, fn.Params[0], "x")
 		testLiteral(t, fn.Params[1], "y")
 
-		So(len(fn.Body.Statements), ShouldEqual, 1)
+		if len(fn.Body.Statements) != 1 {
+			t.Errorf("function body should have 1 statement; got %d", len(fn.Body.Statements))
+		}
 		body, ok := fn.Body.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("function body should be *ast.ExpressionStatement; got %T", fn.Body.Statements[0])
+		}
 		testInfixExpression(t, body.Expression, "x", "+", "y")
 	})
-	Convey("Function params", t, func() {
-		tests := []struct {
+
+	t.Run("Function params", func(t *testing.T) {
+		tt := []struct {
 			input  string
 			params []string
 		}{
@@ -262,35 +307,48 @@ func TestExpressions(t *testing.T) {
 			{"fn(x,y){}", []string{"x", "y"}},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				m := testEval(expected.input, 1)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				m := assertEval(t, tc.input, 1)
 
 				exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-				So(ok, ShouldBeTrue)
+				if !ok {
+					t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+				}
 
 				fn, ok := exp.Expression.(*ast.Fn)
-				So(ok, ShouldBeTrue)
-				So(len(fn.Params), ShouldEqual, len(expected.params))
-				for i, p := range expected.params {
+				if !ok {
+					t.Errorf("expression should be *ast.Fn; got %T", exp.Expression)
+				}
+				if len(fn.Params) != len(tc.params) {
+					t.Errorf("function should have %d params; got %d", len(tc.params), len(fn.Params))
+				}
+				for i, p := range tc.params {
 					testLiteral(t, fn.Params[i], p)
 				}
 			})
 		}
 	})
-	Convey("Call expressions", t, func() {
+
+	t.Run("Call expressions", func(t *testing.T) {
 		input := `add(1, 2 * 3, 4 + 5)`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 
 		call, ok := exp.Expression.(*ast.Call)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("expression should be *ast.Call; got %T", exp.Expression)
+		}
 
-		testIdLiteral(call.Fn, "add")
+		testIdLiteral(t, call.Fn, "add")
 
-		So(len(call.Args), ShouldEqual, 3)
+		if len(call.Args) != 3 {
+			t.Errorf("call expression should have 3 arguments; got %d", len(call.Args))
+		}
 		testLiteral(t, call.Args[0], 1)
 		testInfixExpression(t, call.Args[1], 2, "*", 3)
 		testInfixExpression(t, call.Args[2], 4, "+", 5)
@@ -298,53 +356,76 @@ func TestExpressions(t *testing.T) {
 }
 
 func TestIfExpressions(t *testing.T) {
-	Convey("If expressions", t, func() {
+	t.Run("If expressions", func(t *testing.T) {
 		input := `if (x < y) { x }`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 
-		if_, ok := exp.Expression.(*ast.IfExpression)
-		So(ok, ShouldBeTrue)
+		cond, ok := exp.Expression.(*ast.IfExpression)
+		if !ok {
+			t.Errorf("expression should be *ast.IfExpression; got %T", exp.Expression)
+		}
 
-		testInfixExpression(t, if_.Condition, "x", "<", "y")
+		testInfixExpression(t, cond.Condition, "x", "<", "y")
 
-		So(len(if_.Consequence.Statements), ShouldEqual, 1)
-		cons, ok := if_.Consequence.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if len(cond.Consequence.Statements) != 1 {
+			t.Errorf("if consequence branch should have 1 statement; got %d", len(cond.Consequence.Statements))
+		}
+		cons, ok := cond.Consequence.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("if consequence's branch statement should be *ast.ExpressionStatement; got %T", cond.Consequence.Statements[0])
+		}
 
-		testIdLiteral(cons.Expression, "x")
+		testIdLiteral(t, cons.Expression, "x")
 
-		So(if_.Alternative, ShouldBeNil)
+		if cond.Alternative != nil {
+			t.Errorf("if alternative branch should be nil; got %v", cond.Alternative)
+		}
 	})
-	Convey("If/else expressions", t, func() {
+
+	t.Run("If/else expressions", func(t *testing.T) {
 		input := `if (x < y) { x } else { y }`
-		m := testEval(input, 1)
+		m := assertEval(t, input, 1)
 
 		exp, ok := m.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
+		if !ok {
+			t.Errorf("statement should be *ast.ExpressionStatement; got %T", m.Statements[0])
+		}
 
-		if_, ok := exp.Expression.(*ast.IfExpression)
-		So(ok, ShouldBeTrue)
+		cond, ok := exp.Expression.(*ast.IfExpression)
+		if !ok {
+			t.Errorf("expression should be *ast.IfExpression; got %T", exp.Expression)
+		}
 
-		testInfixExpression(t, if_.Condition, "x", "<", "y")
+		testInfixExpression(t, cond.Condition, "x", "<", "y")
 
-		So(len(if_.Consequence.Statements), ShouldEqual, 1)
-		cons, ok := if_.Consequence.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
-		testIdLiteral(cons.Expression, "x")
+		if len(cond.Consequence.Statements) != 1 {
+			t.Errorf("if consequence branch should have 1 statement; got %d", len(cond.Consequence.Statements))
+		}
+		cons, ok := cond.Consequence.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("if consequence's branch statement should be *ast.ExpressionStatement; got %T", cond.Consequence.Statements[0])
+		}
+		testIdLiteral(t, cons.Expression, "x")
 
-		So(len(if_.Alternative.Statements), ShouldEqual, 1)
-		alt, ok := if_.Alternative.Statements[0].(*ast.ExpressionStatement)
-		So(ok, ShouldBeTrue)
-		testIdLiteral(alt.Expression, "y")
+		if len(cond.Alternative.Statements) != 1 {
+			t.Errorf("if alternative branch should have 1 statement; got %d", len(cond.Alternative.Statements))
+		}
+		alt, ok := cond.Alternative.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Errorf("if alternative's branch statement should be *ast.ExpressionStatement; got %T", cond.Alternative.Statements[0])
+		}
+		testIdLiteral(t, alt.Expression, "y")
 	})
 }
 
 func TestOperatorPrecedence(t *testing.T) {
-	Convey("operator precedence", t, func() {
-		tests := []struct {
+	t.Run("operator precedence", func(t *testing.T) {
+		tt := []struct {
 			input  string
 			output string
 			length int
@@ -378,83 +459,125 @@ func TestOperatorPrecedence(t *testing.T) {
 			{"add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))", 1},
 		}
 
-		for _, expected := range tests {
-			Convey(expected.input, func() {
-				m := testEval(expected.input, expected.length)
+		for _, tc := range tt {
+			t.Run(tc.input, func(t *testing.T) {
+				m := assertEval(t, tc.input, tc.length)
 
 				actual := m.String()
-				So(actual, ShouldEqual, expected.output)
+				if actual != tc.output {
+					t.Errorf("precedence notation should be %q; got %q", tc.output, actual)
+				}
 			})
 		}
 	})
 }
 
 func testLetStatement(t *testing.T, s ast.Statement, name string, val interface{}) {
-	So(s.TokenLiteral(), ShouldEqual, "let")
+	if s.TokenLiteral() != "let" {
+		t.Errorf(`first token for let statement should be "let"; got %q`, s.TokenLiteral())
+	}
 	let, ok := s.(*ast.LetStatement)
-	So(ok, ShouldBeTrue)
-	So(let.Name.TokenLiteral(), ShouldEqual, name)
+	if !ok {
+		t.Errorf("statement should be *ast.LetStatement; got %T", s)
+	}
+	if let.Name.TokenLiteral() != name {
+		t.Errorf("name of the variable should be %q; got %q", name, let.Name.TokenLiteral())
+	}
 	testLiteral(t, let.Value, val)
 }
 
 func testLiteral(t *testing.T, exp ast.Expression, val interface{}) {
 	switch val := val.(type) {
 	case string:
-		testIdLiteral(exp, val)
+		testIdLiteral(t, exp, val)
 	case int:
-		testNumberLiteral(exp, float64(val))
+		testNumberLiteral(t, exp, float64(val))
 	case float64:
-		testNumberLiteral(exp, val)
+		testNumberLiteral(t, exp, val)
 	case bool:
-		testBoolLiteral(exp, val)
+		testBoolLiteral(t, exp, val)
 	default:
 		t.Errorf("type of exp not handled: %T", val)
 	}
 }
 
-func testIdLiteral(exp ast.Expression, val string) {
+func testIdLiteral(t *testing.T, exp ast.Expression, val string) {
 	id, ok := exp.(*ast.Id)
-	So(ok, ShouldBeTrue)
-	So(id.Value, ShouldEqual, val)
-	So(id.TokenLiteral(), ShouldEqual, val)
+	if !ok {
+		t.Errorf("expression should be *ast.Id; got %T", exp)
+	}
+	if id.Value != val {
+		t.Errorf("identifier value (it's name) should be %q; got %q", val, id.Value)
+	}
+	if id.TokenLiteral() != val {
+		t.Errorf("identifier literal (it's name) should be %q; got %q", val, id.TokenLiteral())
+	}
 }
 
-func testNumberLiteral(exp ast.Expression, val float64) {
+func testNumberLiteral(t *testing.T, exp ast.Expression, val float64) {
 	num, ok := exp.(*ast.Number)
-	So(ok, ShouldBeTrue)
-	So(num.Value, ShouldEqual, val)
-	So(num.TokenLiteral(), ShouldEqual, fmt.Sprintf("%v", val))
+	if !ok {
+		t.Errorf("expression should be *ast.Number; got %T", exp)
+	}
+	if num.Value != val {
+		t.Errorf("number value should be %v; got %v", val, num.Value)
+	}
+	vals := fmt.Sprintf("%v", val)
+	if num.TokenLiteral() != vals {
+		t.Errorf("number literal should be %v; got %v", vals, num.TokenLiteral())
+	}
 }
 
-func testStringLiteral(exp ast.Expression, val string) {
+func testStringLiteral(t *testing.T, exp ast.Expression, val string) {
 	str, ok := exp.(*ast.String)
-	So(ok, ShouldBeTrue)
-	So(str.Value, ShouldEqual, val)
-	So(str.TokenLiteral(), ShouldEqual, val)
+	if !ok {
+		t.Errorf("expression should be *ast.String; got %T", exp)
+	}
+	if str.Value != val {
+		t.Errorf("string value should be %q; got %q", val, str.Value)
+	}
+	if str.TokenLiteral() != val {
+		t.Errorf("string literal should be %q; got %q", val, str.TokenLiteral())
+	}
 }
 
-func testBoolLiteral(exp ast.Expression, val bool) {
+func testBoolLiteral(t *testing.T, exp ast.Expression, val bool) {
 	b, ok := exp.(*ast.Bool)
-	So(ok, ShouldBeTrue)
-	So(b.Value, ShouldEqual, val)
-	So(b.TokenLiteral(), ShouldEqual, fmt.Sprintf("%t", val))
+	if !ok {
+		t.Errorf("expression should be *ast.Bool; got %T", exp)
+	}
+	if b.Value != val {
+		t.Errorf("boolean value should be %v; got %v", val, b.Value)
+	}
+	bs := fmt.Sprintf("%t", val)
+	if b.TokenLiteral() != bs {
+		t.Errorf("boolean literal should be %v; got %v", bs, b.TokenLiteral())
+	}
 }
 
 func testInfixExpression(t *testing.T, exp ast.Expression, left interface{}, op string, right interface{}) {
 	infix, ok := exp.(*ast.InfixExpression)
-	So(ok, ShouldBeTrue)
+	if !ok {
+		t.Errorf("statement should be *ast.InfixExpression; got %T", exp)
+	}
 	testLiteral(t, infix.Left, left)
-	So(infix.Op, ShouldEqual, op)
+	if infix.Op != op {
+		t.Errorf("infix operator should be %q; got %q", op, infix.Op)
+	}
 	testLiteral(t, infix.Right, right)
 }
 
-func testEval(input string, expectedStatementsLen int) *ast.Module {
+func assertEval(t *testing.T, input string, expectedStatementsLen int) *ast.Module {
 	l := lexer.New(strings.NewReader(input))
 	p := New(l)
 	m, errors := p.Parse()
-	So(errors, ShouldBeEmpty)
-	if expectedStatementsLen > 0 {
-		So(len(m.Statements), ShouldEqual, expectedStatementsLen)
+	if len(errors) > 0 {
+		t.Errorf("parse of the code should not produce errors; got %v", errors)
 	}
+
+	if expectedStatementsLen > 0 && len(m.Statements) != expectedStatementsLen {
+		t.Errorf("statements produced should match %d; got %d", expectedStatementsLen, len(m.Statements))
+	}
+
 	return m
 }

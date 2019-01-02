@@ -1,0 +1,28 @@
+image: golang:1.11
+
+stages:
+  - test
+  - build
+
+test:
+  stage: test
+  before_script:
+    - go mod download
+  script:
+    - go test -race -cover -coverprofile c.out ./...
+    - go tool cover -html c.out -o coverage.html
+    - go tool cover -func c.out
+  coverage: '/\(statements\)\s+(\d+.\d%)/'
+  artifacts:
+    paths:
+      - coverage.html
+
+build:
+  stage: build
+  before_script:
+    - go mod download
+  script:
+    - go build -o geo cmd/geo/main.go
+  artifacts:
+    paths:
+      - geo

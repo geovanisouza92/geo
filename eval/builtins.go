@@ -10,7 +10,7 @@ var builtins = map[string]*object.Builtin{
 	"len": &object.Builtin{
 		Name:   "len",
 		Params: []object.ObjectType{object.TypeArray | object.TypeString},
-		Fn: func(args ...object.Object) object.Object {
+		Impl: func(args ...object.Object) object.Object {
 			switch arg := args[0].(type) {
 			case *object.Array:
 				return object.NewNumber(float64(len(arg.Elements)))
@@ -24,7 +24,7 @@ var builtins = map[string]*object.Builtin{
 	"head": &object.Builtin{
 		Name:   "head",
 		Params: []object.ObjectType{object.TypeArray},
-		Fn: func(args ...object.Object) object.Object {
+		Impl: func(args ...object.Object) object.Object {
 			ary := args[0].(*object.Array)
 			if len(ary.Elements) > 0 {
 				return ary.Elements[0]
@@ -36,7 +36,7 @@ var builtins = map[string]*object.Builtin{
 	"last": &object.Builtin{
 		Name:   "last",
 		Params: []object.ObjectType{object.TypeArray},
-		Fn: func(args ...object.Object) object.Object {
+		Impl: func(args ...object.Object) object.Object {
 			ary := args[0].(*object.Array)
 			length := len(ary.Elements)
 			if length > 0 {
@@ -49,7 +49,7 @@ var builtins = map[string]*object.Builtin{
 	"tail": &object.Builtin{
 		Name:   "tail",
 		Params: []object.ObjectType{object.TypeArray},
-		Fn: func(args ...object.Object) object.Object {
+		Impl: func(args ...object.Object) object.Object {
 			ary := args[0].(*object.Array)
 			length := len(ary.Elements)
 			if length > 0 {
@@ -64,7 +64,7 @@ var builtins = map[string]*object.Builtin{
 	"push": &object.Builtin{
 		Name:   "push",
 		Params: []object.ObjectType{object.TypeArray, object.TypeAny},
-		Fn: func(args ...object.Object) object.Object {
+		Impl: func(args ...object.Object) object.Object {
 			ary := args[0].(*object.Array)
 			length := len(ary.Elements)
 
@@ -77,7 +77,7 @@ var builtins = map[string]*object.Builtin{
 	},
 	"puts!": &object.Builtin{
 		Name: "puts!",
-		Fn: func(args ...object.Object) object.Object {
+		Impl: func(args ...object.Object) object.Object {
 			for _, arg := range args {
 				fmt.Println(arg.String())
 			}
